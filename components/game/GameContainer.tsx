@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { fetchRandomAnime, verifyAnswer } from '@/lib/actions/anime';
-import { GameAnime, AnimeFilters } from '@/lib/types/anime';
+import { fetchRandomContent, verifyAnswer } from '@/lib/actions/anime';
+import { GameAnime, AnimeFilters, ContentType } from '@/lib/types/anime';
 import { UI_TEXT } from '@/lib/constants/game';
 import { getErrorMessage } from '@/lib/utils/errors';
 import AnimeImage from './AnimeImage';
@@ -10,6 +10,7 @@ import AnswerInput from './AnswerInput';
 import ResultDisplay from './ResultDisplay';
 import GameStats from './GameStats';
 import FilterPanel from './FilterPanel';
+import ContentTypeSelector from './ContentTypeSelector';
 import ErrorMessage from '../ui/ErrorMessage';
 
 interface GameContainerProps {
@@ -31,10 +32,11 @@ export default function GameContainer({ initialAnime }: GameContainerProps) {
   const [error, setError] = useState<string | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0); // Текущий просматриваемый скриншот
   const [filters, setFilters] = useState<AnimeFilters>({});
+  const [contentType, setContentType] = useState<ContentType>(initialAnime.contentType || 'anime');
 
   const MAX_ATTEMPTS = 6;
 
-  // Загружаем фильтры и статистику из localStorage при монтировании
+  // Загружаем фильтры, статистику и тип контента из localStorage при монтировании
   useEffect(() => {
     const savedFilters = localStorage.getItem('anime-filters');
     if (savedFilters) {
@@ -55,6 +57,11 @@ export default function GameContainer({ initialAnime }: GameContainerProps) {
       } catch (e) {
         console.error('Failed to parse saved stats:', e);
       }
+    }
+
+    const savedContentType = localStorage.getItem('content-type');
+    if (savedContentType && (savedContentType === 'anime' || savedContentType === 'tv')) {
+      setContentType(savedContentType as ContentType);
     }
   }, []);
 
@@ -101,7 +108,7 @@ export default function GameContainer({ initialAnime }: GameContainerProps) {
     }
   }, [availableImages, unlockedImagesCount, MAX_ATTEMPTS]);
 
-  const handleSubmitAnswer = async (answer: string, animeId?: number) => {
+  const handleSubmitAnswer = async (answer: string, contentId?: number) => {
     setIsLoading(true);
     setError(null);
 
@@ -111,7 +118,8 @@ export default function GameContainer({ initialAnime }: GameContainerProps) {
         currentAnime.id,
         currentAnime.name,
         currentAnime.russian,
-        animeId
+        contentId,
+        contentType
       );
 
       if (correct) {
@@ -147,9 +155,9 @@ export default function GameContainer({ initialAnime }: GameContainerProps) {
     setError(null);
 
     try {
-      const newAnime = await fetchRandomAnime(filters);
+      const newContent = await fetchRandomContent(contentType, contentType === 'anime' ? filters : undefined);
       // Скриншоты уже перемешаны на сервере
-      setCurrentAnime(newAnime);
+      setCurrentAnime(newContent);
       setIsRoundComplete(false);
       setIsCorrect(null);
       setAttempts(0);
@@ -157,7 +165,7 @@ export default function GameContainer({ initialAnime }: GameContainerProps) {
       setSelectedImageIndex(0);
       setRound(prev => prev + 1);
     } catch (err) {
-      console.error('Error fetching new anime:', err);
+      console.error('Error fetching new content:', err);
       setError(getErrorMessage(err) || UI_TEXT.ERRORS.FETCH_ANIME);
     } finally {
       setIsLoadingAnime(false);
@@ -169,21 +177,47 @@ export default function GameContainer({ initialAnime }: GameContainerProps) {
     // Сохраняем в localStorage
     localStorage.setItem('anime-filters', JSON.stringify(newFilters));
 
-    // Перезапрашиваем аниме с новыми фильтрами
+    // Перезапрашиваем контент с новыми фильтрами (только для аниме)
+    if (contentType === 'anime') {
+      setIsLoadingAnime(true);
+      setError(null);
+
+      try {
+        const newContent = await fetchRandomContent('anime', newFilters);
+        // Скриншоты уже перемешаны на сервере
+        setCurrentAnime(newContent);
+        setIsRoundComplete(false);
+        setIsCorrect(null);
+        setAttempts(0);
+        setWrongAnswers([]);
+        setSelectedImageIndex(0);
+      } catch (err) {
+        console.error('Error fetching content with new filters:', err);
+        setError(getErrorMessage(err) || UI_TEXT.ERRORS.FETCH_ANIME);
+      } finally {
+        setIsLoadingAnime(false);
+      }
+    }
+  };
+
+  const handleContentTypeChange = async (newType: ContentType) => {
+    setContentType(newType);
+    localStorage.setItem('content-type', newType);
+
+    // Загружаем новый контент при смене типа
     setIsLoadingAnime(true);
     setError(null);
 
     try {
-      const newAnime = await fetchRandomAnime(newFilters);
-      // Скриншоты уже перемешаны на сервере
-      setCurrentAnime(newAnime);
+      const newContent = await fetchRandomContent(newType, newType === 'anime' ? filters : undefined);
+      setCurrentAnime(newContent);
       setIsRoundComplete(false);
       setIsCorrect(null);
       setAttempts(0);
       setWrongAnswers([]);
       setSelectedImageIndex(0);
     } catch (err) {
-      console.error('Error fetching anime with new filters:', err);
+      console.error('Error fetching content with new type:', err);
       setError(getErrorMessage(err) || UI_TEXT.ERRORS.FETCH_ANIME);
     } finally {
       setIsLoadingAnime(false);
@@ -206,9 +240,16 @@ export default function GameContainer({ initialAnime }: GameContainerProps) {
         <header className="text-center space-y-2 animate-fadeIn">
           <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4">
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
-              {UI_TEXT.TITLE}
+              {contentType === 'tv' ? 'TV Show Guessr' : UI_TEXT.TITLE}
             </h1>
-            <FilterPanel filters={filters} onFiltersChange={handleFiltersChange} />
+            <ContentTypeSelector 
+              contentType={contentType} 
+              onChange={handleContentTypeChange}
+              disabled={isLoadingAnime || isLoading}
+            />
+            {contentType === 'anime' && (
+              <FilterPanel filters={filters} onFiltersChange={handleFiltersChange} />
+            )}
           </div>
           <GameStats round={round} score={score} correctRounds={correctRounds} />
         </header>
@@ -285,7 +326,7 @@ export default function GameContainer({ initialAnime }: GameContainerProps) {
                 <div className="space-y-2 sm:space-y-3">
                   <div className="text-center">
                     <h2 className="text-lg sm:text-xl font-semibold text-gray-800 dark:text-gray-200">
-                      {UI_TEXT.QUESTION}
+                      {contentType === 'tv' ? 'What TV show is this?' : UI_TEXT.QUESTION}
                     </h2>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                       Attempt {attempts + 1} of {MAX_ATTEMPTS}{unlockedImagesCount > 1 ? ` • Viewing screenshot ${selectedImageIndex + 1}` : ''}
@@ -296,6 +337,7 @@ export default function GameContainer({ initialAnime }: GameContainerProps) {
                     onSubmit={handleSubmitAnswer}
                     disabled={isLoading}
                     filters={filters}
+                    contentType={contentType}
                   />
 
                   {/* Mobile Previous Attempts */}

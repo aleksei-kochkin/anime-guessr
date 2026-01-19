@@ -1,20 +1,21 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { fetchAnimeSuggestions } from '@/lib/actions/anime';
-import { AnimeSearchResult, AnimeFilters } from '@/lib/types/anime';
+import { fetchContentSuggestions } from '@/lib/actions/anime';
+import { SearchResult, AnimeFilters, ContentType } from '@/lib/types/anime';
 import { GAME_CONFIG, UI_TEXT } from '@/lib/constants/game';
 import Button from '@/components/ui/Button';
 
 interface AnswerInputProps {
-  onSubmit: (answer: string, animeId?: number) => void;
+  onSubmit: (answer: string, contentId?: number) => void;
   disabled: boolean;
   filters?: AnimeFilters;
+  contentType: ContentType;
 }
 
-export default function AnswerInput({ onSubmit, disabled, filters }: AnswerInputProps) {
+export default function AnswerInput({ onSubmit, disabled, filters, contentType }: AnswerInputProps) {
   const [input, setInput] = useState('');
-  const [suggestions, setSuggestions] = useState<AnimeSearchResult[]>([]);
+  const [suggestions, setSuggestions] = useState<SearchResult[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -28,7 +29,7 @@ export default function AnswerInput({ onSubmit, disabled, filters }: AnswerInput
       }
 
       try {
-        const results = await fetchAnimeSuggestions(input, filters);
+        const results = await fetchContentSuggestions(input, contentType, filters);
         setSuggestions(results);
         setShowSuggestions(true);
       } catch (error) {
@@ -39,7 +40,7 @@ export default function AnswerInput({ onSubmit, disabled, filters }: AnswerInput
 
     const debounceTimer = setTimeout(fetchSuggestions, GAME_CONFIG.SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(debounceTimer);
-  }, [input, filters]);
+  }, [input, filters, contentType]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -68,8 +69,8 @@ export default function AnswerInput({ onSubmit, disabled, filters }: AnswerInput
     }
   };
 
-  const handleSelectSuggestion = (id: number, name: string, russian: string) => {
-    const selectedName = russian || name;
+  const handleSelectSuggestion = (id: number, name: string, secondaryName: string) => {
+    const selectedName = secondaryName || name;
     setInput('');
     setShowSuggestions(false);
     setSuggestions([]);
@@ -90,12 +91,14 @@ export default function AnswerInput({ onSubmit, disabled, filters }: AnswerInput
     } else if (e.key === 'Enter' && selectedIndex >= 0) {
       e.preventDefault();
       const selected = suggestions[selectedIndex];
-      handleSelectSuggestion(selected.id, selected.name, selected.russian);
+      handleSelectSuggestion(selected.id, selected.name, selected.secondaryName);
     } else if (e.key === 'Escape') {
       setShowSuggestions(false);
       setSelectedIndex(-1);
     }
   };
+
+  const placeholder = contentType === 'tv' ? 'Enter TV show name...' : UI_TEXT.PLACEHOLDER;
 
   return (
     <div className="relative w-full max-w-md mx-auto">
@@ -107,7 +110,7 @@ export default function AnswerInput({ onSubmit, disabled, filters }: AnswerInput
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
-          placeholder={UI_TEXT.PLACEHOLDER}
+          placeholder={placeholder}
           disabled={disabled}
           className="w-full px-3 py-2 text-base border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         />
@@ -128,19 +131,19 @@ export default function AnswerInput({ onSubmit, disabled, filters }: AnswerInput
           ref={suggestionsRef}
           className="absolute z-10 w-full mt-2 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-64 overflow-y-auto"
         >
-          {suggestions.map((anime, index) => (
+          {suggestions.map((item, index) => (
             <button
-              key={anime.id}
-              onClick={() => handleSelectSuggestion(anime.id, anime.name, anime.russian)}
+              key={item.id}
+              onClick={() => handleSelectSuggestion(item.id, item.name, item.secondaryName)}
               className={`w-full px-3 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-b-0 cursor-pointer ${index === selectedIndex ? 'bg-gray-100 dark:bg-gray-700' : ''
                 }`}
             >
               <div className="text-sm font-medium text-gray-900 dark:text-white">
-                {anime.russian || anime.name}
+                {item.secondaryName || item.name}
               </div>
-              {anime.russian && anime.name !== anime.russian && (
+              {item.secondaryName && item.name !== item.secondaryName && (
                 <div className="text-xs text-gray-500 dark:text-gray-400">
-                  {anime.name}
+                  {item.name}
                 </div>
               )}
             </button>
