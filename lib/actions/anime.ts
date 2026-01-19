@@ -1,77 +1,108 @@
 'use server';
 
-// Server Actions для игры
 import { getRandomAnime, searchAnime, checkAnswer } from '@/lib/api/shikimori';
-import { getRandomTVShow, searchTVShows, checkTVShowAnswer } from '@/lib/api/tmdb';
-import { GameAnime, SearchResult, AnimeFilters, ContentType } from '@/lib/types/anime';
+import { getRandomContent, searchContent, checkAnswer as checkTMDBAnswer, normalizeFilters } from '@/lib/api/tmdb';
+import { GameContent, ContentType, SearchResult } from '@/lib/types/game';
+import { getContentTypeCookie, getAnimeFiltersCookie, getMovieFiltersCookie, getTVSeriesFiltersCookie } from '@/lib/utils/cookies-server';
 
-export async function fetchRandomContent(contentType: ContentType, filters?: AnimeFilters): Promise<GameAnime> {
+/**
+ * Get random content (anime, movie or TV series)
+ * Reads settings from cookies
+ */
+export async function fetchRandomContent(
+  contentType?: ContentType,
+): Promise<GameContent> {
+  // If type not provided, read from cookies
+  const type = contentType || await getContentTypeCookie();
+  
   try {
-    if (contentType === 'tv') {
-      const tvShow = await getRandomTVShow();
+    if (type === 'movie') {
+      // Read movie filters from cookies and normalize them
+      const rawFilters = await getMovieFiltersCookie();
+      const movieFilters = normalizeFilters(rawFilters, 'movie');
+      const film = await getRandomContent('movie', movieFilters);
       return {
-        id: tvShow.id,
-        name: tvShow.name,
-        russian: tvShow.originalName, // используем originalName как вторичное имя
-        image: tvShow.image,
-        screenshots: tvShow.screenshots,
-        url: tvShow.url,
-        contentType: 'tv',
-      };
-    } else {
-      const anime = await getRandomAnime(filters);
-      return {
-        ...anime,
-        contentType: 'anime',
+        ...film,
+        contentType: type,
       };
     }
+    
+    if (type === 'tv') {
+      // Read TV series filters from cookies and normalize them
+      const rawFilters = await getTVSeriesFiltersCookie();
+      const tvSeriesFilters = normalizeFilters(rawFilters, 'tv');
+      const film = await getRandomContent('tv', tvSeriesFilters);
+      return {
+        ...film,
+        contentType: type,
+      };
+    }
+    
+    // Read anime filters from cookies
+    const animeFilters = await getAnimeFiltersCookie();
+    const anime = await getRandomAnime(animeFilters);
+    return {
+      ...anime,
+      contentType: 'anime',
+    };
   } catch (error) {
-    console.error(`Error fetching random ${contentType}:`, error);
-    throw new Error(`Failed to fetch ${contentType === 'tv' ? 'TV show' : 'anime'}. Please try again.`);
+    console.error(`Error fetching random ${type}:`, error);
+    const contentLabel = type === 'movie' ? 'movie' : type === 'tv' ? 'TV series' : 'anime';
+    throw new Error(`Failed to fetch ${contentLabel}. Please try again.`);
   }
 }
 
-// Совместимость с существующим кодом
-export async function fetchRandomAnime(filters?: AnimeFilters): Promise<GameAnime> {
-  return fetchRandomContent('anime', filters);
-}
-
+/**
+ * Search content by query
+ * Reads settings from cookies
+ */
 export async function fetchContentSuggestions(
   query: string,
-  contentType: ContentType,
-  filters?: AnimeFilters
+  contentType?: ContentType,
 ): Promise<SearchResult[]> {
+  if (!query.trim()) {
+    return [];
+  }
+
+  // If type not provided, read from cookies
+  const type = contentType || await getContentTypeCookie();
+
   try {
-    if (contentType === 'tv') {
-      const results = await searchTVShows(query);
-      return results.map(show => ({
-        id: show.id,
-        name: show.name,
-        secondaryName: show.originalName,
-        image: show.image,
-        contentType: 'tv' as ContentType,
-      }));
-    } else {
-      const results = await searchAnime(query, filters);
-      return results.map(anime => ({
-        id: anime.id,
-        name: anime.name,
-        secondaryName: anime.russian,
-        image: anime.image,
-        contentType: 'anime' as ContentType,
+    if (type === 'movie') {
+      // Read movie filters from cookies and normalize them
+      const rawFilters = await getMovieFiltersCookie();
+      const movieFilters = normalizeFilters(rawFilters, 'movie');
+      const results = await searchContent(query, 'movie', movieFilters);
+      return results.map(film => ({
+        ...film,
+        contentType: type,
       }));
     }
+    
+    if (type === 'tv') {
+      // Read TV series filters from cookies and normalize them
+      const rawFilters = await getTVSeriesFiltersCookie();
+      const tvSeriesFilters = normalizeFilters(rawFilters, 'tv');
+      const results = await searchContent(query, 'tv', tvSeriesFilters);
+      return results.map(film => ({
+        ...film,
+        contentType: type,
+      }));
+    }
+
+    // Read anime filters from cookies
+    const animeFilters = await getAnimeFiltersCookie();
+    const results = await searchAnime(query, animeFilters);
+    return results; // searchAnime now returns SearchResult[] with contentType
   } catch (error) {
-    console.error(`Error searching ${contentType}:`, error);
+    console.error(`Error searching ${type}:`, error);
     return [];
   }
 }
 
-// Совместимость с существующим кодом
-export async function fetchAnimeSuggestions(query: string, filters?: AnimeFilters): Promise<SearchResult[]> {
-  return fetchContentSuggestions(query, 'anime', filters);
-}
-
+/**
+ * Verify user answer
+ */
 export async function verifyAnswer(
   userAnswer: string,
   correctId: number,
@@ -80,15 +111,15 @@ export async function verifyAnswer(
   userAnswerId?: number,
   contentType: ContentType = 'anime'
 ): Promise<boolean> {
-  // Если есть ID из suggestions - проверяем напрямую (100% точность)
+  // If ID from suggestions - check directly (100% accuracy)
   if (userAnswerId !== undefined) {
     return userAnswerId === correctId;
   }
   
-  // Иначе проверяем по названию (для ручного ввода)
-  if (contentType === 'tv') {
-    return checkTVShowAnswer(userAnswer, correctName, correctSecondaryName);
-  } else {
-    return checkAnswer(userAnswer, correctName, correctSecondaryName);
+  // Otherwise check by name (for manual input)
+  if (contentType !== 'anime') {
+    return checkTMDBAnswer(userAnswer, correctName, correctSecondaryName);
   }
+  
+  return checkAnswer(userAnswer, correctName, correctSecondaryName);
 }

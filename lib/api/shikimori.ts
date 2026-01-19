@@ -1,7 +1,56 @@
 // API layer для работы с Shikimori API
-import { ShikimoriAnime, ShikimoriScreenshot, AnimeSearchResult, GameAnime, AnimeFilters } from '@/lib/types/anime';
-import { GAME_CONFIG, SHIKIMORI_CONFIG } from '@/lib/constants/game';
+import { GAME_CONFIG } from '@/lib/constants/game';
 import { APIError, RateLimitError, handleAPIError } from '@/lib/utils/errors';
+import { GameContent, SearchResult } from '@/lib/types/game';
+
+// Shikimori-specific types
+export interface ShikimoriAnime {
+  id: number;
+  name: string;
+  russian: string;
+  image: {
+    original: string;
+    preview: string;
+    x96: string;
+    x48: string;
+  };
+  url: string;
+  kind: string;
+  score: string;
+  status: string;
+  episodes: number;
+  episodes_aired: number;
+  aired_on: string | null;
+  released_on: string | null;
+}
+
+export interface ShikimoriScreenshot {
+  original: string;
+  preview: string;
+}
+
+export interface AnimeSearchResult {
+  id: number;
+  name: string;
+  russian: string;
+  image: string;
+}
+
+export interface AnimeFilters {
+  kind?: string[]; // tv, movie, ova, ona, special, music
+  status?: string[]; // anons, ongoing, released
+  season?: string; // e.g., "2020_2024", "summer_2023"
+  score?: number; // minimum rating
+  duration?: string; // S (<10min), D (<30min), F (>30min)
+  rating?: string[]; // g, pg, pg_13, r, r_plus, rx
+  genre?: string[]; // list of genre IDs
+}
+
+// Shikimori API configuration
+const SHIKIMORI_CONFIG = {
+  BASE_URL: 'https://shikimori.one/api',
+  USER_AGENT: 'anime-guessr',
+} as const;
 
 // Кеширование на уровне модуля для rate limiting
 let lastRequestTime = 0;
@@ -106,7 +155,7 @@ function buildFilterParams(filters?: AnimeFilters): Record<string, string> {
   return params;
 }
 
-export async function getRandomAnime(filters?: AnimeFilters): Promise<GameAnime> {
+export async function getRandomAnime(filters?: AnimeFilters): Promise<GameContent> {
   const MIN_SCREENSHOTS = 6;
   const MAX_RETRIES = 10;
   const BATCH_SIZE = 5;
@@ -148,7 +197,7 @@ export async function getRandomAnime(filters?: AnimeFilters): Promise<GameAnime>
             return {
               id: anime.id,
               name: anime.name,
-              russian: anime.russian,
+              secondaryName: anime.russian,
               image: getFullImageUrl(anime.image.original),
               screenshots: shuffledScreenshots,
               url: `https://shikimori.one${anime.url}`,
@@ -179,7 +228,7 @@ export async function getRandomAnime(filters?: AnimeFilters): Promise<GameAnime>
   throw new APIError('Failed to find anime with enough screenshots', 404);
 }
 
-export async function searchAnime(query: string, filters?: AnimeFilters): Promise<AnimeSearchResult[]> {
+export async function searchAnime(query: string, filters?: AnimeFilters): Promise<SearchResult[]> {
   if (!query || query.trim().length < GAME_CONFIG.SEARCH_MIN_LENGTH) {
     return [];
   }
@@ -201,8 +250,9 @@ export async function searchAnime(query: string, filters?: AnimeFilters): Promis
     return animes.map(anime => ({
       id: anime.id,
       name: anime.name,
-      russian: anime.russian,
+      secondaryName: anime.russian,
       image: getFullImageUrl(anime.image.preview),
+      contentType: 'anime' as const,
     }));
   } catch (error) {
     console.error('Search error:', error);

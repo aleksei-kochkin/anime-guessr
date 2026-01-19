@@ -20,11 +20,6 @@ export const GAME_CONFIG = {
   IMAGE_LOAD_TIMEOUT: 10000, // Таймаут загрузки изображения
 } as const;
 
-export const SHIKIMORI_CONFIG = {
-  BASE_URL: 'https://shikimori.one/api',
-  USER_AGENT: 'anime-guessr',
-} as const;
-
 export const UI_TEXT = {
   TITLE: 'Anime Guessr',
   SUBTITLE: 'Guess the Anime',
@@ -86,32 +81,3 @@ export const DIFFICULTY_CONFIG: Record<GameDifficulty, { minScore: string; label
     label: 'Hard',
   },
 };
-
-// Опции для фильтров аниме
-export const FILTER_OPTIONS = {
-  kind: [
-    { value: 'tv', label: 'TV' },
-    { value: 'movie', label: 'Movie' },
-    { value: 'ova', label: 'OVA' },
-    { value: 'ona', label: 'ONA' },
-    { value: 'special', label: 'Special' },
-    { value: 'music', label: 'Music' },
-  ],
-  status: [
-    { value: 'released', label: 'Released' },
-    { value: 'ongoing', label: 'Ongoing' },
-    { value: 'anons', label: 'Announced' },
-  ],
-  duration: [
-    { value: 'S', label: 'Short (<10 min)' },
-    { value: 'D', label: 'Medium (<30 min)' },
-    { value: 'F', label: 'Full (>30 min)' },
-  ],
-  rating: [
-    { value: 'g', label: 'G - All Ages' },
-    { value: 'pg', label: 'PG - Children' },
-    { value: 'pg_13', label: 'PG-13 - Teens 13+' },
-    { value: 'r', label: 'R - 17+' },
-    { value: 'r_plus', label: 'R+ - Mild Nudity' },
-  ],
-} as const;

@@ -1,4 +1,4 @@
-// Утилиты для обработки ошибок
+// Utilities for error handling
 
 export class AnimeGuessrError extends Error {
   constructor(
@@ -58,12 +58,4 @@ export function getErrorMessage(error: unknown): string {
   }
 
   return 'An unknown error occurred';
-}
-
-export function isRateLimitError(error: unknown): boolean {
-  return error instanceof RateLimitError;
-}
-
-export function isNetworkError(error: unknown): boolean {
-  return error instanceof NetworkError;
 }

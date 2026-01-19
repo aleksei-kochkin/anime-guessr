@@ -2,45 +2,60 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { fetchContentSuggestions } from '@/lib/actions/anime';
-import { SearchResult, AnimeFilters, ContentType } from '@/lib/types/anime';
+import { SearchResult, ContentType } from '@/lib/types/game';
 import { GAME_CONFIG, UI_TEXT } from '@/lib/constants/game';
+import { ContentStrategyFactory } from '@/lib/strategies';
+import { getErrorMessage } from '@/lib/utils/errors';
 import Button from '@/components/ui/Button';
 
 interface AnswerInputProps {
   onSubmit: (answer: string, contentId?: number) => void;
   disabled: boolean;
-  filters?: AnimeFilters;
   contentType: ContentType;
 }
 
-export default function AnswerInput({ onSubmit, disabled, filters, contentType }: AnswerInputProps) {
+export default function AnswerInput({ onSubmit, disabled, contentType }: AnswerInputProps) {
   const [input, setInput] = useState('');
   const [suggestions, setSuggestions] = useState<SearchResult[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
+
+  // Get strategy for current content type
+  const strategy = ContentStrategyFactory.getStrategy(contentType);
 
   useEffect(() => {
     const fetchSuggestions = async () => {
       if (input.trim().length < GAME_CONFIG.SEARCH_MIN_LENGTH) {
         setSuggestions([]);
+        setSearchError(null);
         return;
       }
 
+      setIsSearching(true);
+      setSearchError(null);
+
       try {
-        const results = await fetchContentSuggestions(input, contentType, filters);
+        const results = await fetchContentSuggestions(input, contentType);
         setSuggestions(results);
         setShowSuggestions(true);
       } catch (error) {
         console.error('Error fetching suggestions:', error);
+        const errorMessage = getErrorMessage(error);
+        setSearchError(errorMessage || 'Failed to fetch suggestions');
         setSuggestions([]);
+        setShowSuggestions(false);
+      } finally {
+        setIsSearching(false);
       }
     };
 
     const debounceTimer = setTimeout(fetchSuggestions, GAME_CONFIG.SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(debounceTimer);
-  }, [input, filters, contentType]);
+  }, [input, contentType]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -66,6 +81,7 @@ export default function AnswerInput({ onSubmit, disabled, filters, contentType }
       setSuggestions([]);
       setShowSuggestions(false);
       setSelectedIndex(-1);
+      setSearchError(null);
     }
   };
 
@@ -75,6 +91,7 @@ export default function AnswerInput({ onSubmit, disabled, filters, contentType }
     setShowSuggestions(false);
     setSuggestions([]);
     setSelectedIndex(-1);
+    setSearchError(null);
     // Сразу отправляем ответ с ID
     onSubmit(selectedName, id);
   };
@@ -98,8 +115,6 @@ export default function AnswerInput({ onSubmit, disabled, filters, contentType }
     }
   };
 
-  const placeholder = contentType === 'tv' ? 'Enter TV show name...' : UI_TEXT.PLACEHOLDER;
-
   return (
     <div className="relative w-full max-w-md mx-auto">
       <form onSubmit={handleSubmit} className="relative">
@@ -110,10 +125,16 @@ export default function AnswerInput({ onSubmit, disabled, filters, contentType }
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
-          placeholder={placeholder}
+          placeholder={strategy.placeholder}
           disabled={disabled}
           className="w-full px-3 py-2 text-base border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         />
+
+        {isSearching && (
+          <div className="absolute right-20 top-1/2 -translate-y-1/2">
+            <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        )}
 
         <Button
           type="submit"
@@ -125,6 +146,18 @@ export default function AnswerInput({ onSubmit, disabled, filters, contentType }
           {input.trim() ? UI_TEXT.SUBMIT : 'Skip'}
         </Button>
       </form>
+
+      {/* Search Error Display */}
+      {searchError && (
+        <div className="mt-2 px-3 py-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-900/40 rounded-lg">
+          <p className="text-xs text-yellow-800 dark:text-yellow-200">
+            {searchError}
+          </p>
+          <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-1">
+            You can still type manually and submit.
+          </p>
+        </div>
+      )}
 
       {showSuggestions && suggestions.length > 0 && (
         <div

@@ -11,8 +11,8 @@ export default async function Home() {
   let error: string | null = null;
 
   try {
-    // Начинаем с аниме по умолчанию
-    initialContent = await fetchRandomContent('anime');
+    // Все настройки читаются из cookies внутри server action
+    initialContent = await fetchRandomContent();
   } catch (err) {
     console.error('Failed to fetch initial content:', err);
     error = getErrorMessage(err) || UI_TEXT.ERRORS.FETCH_ANIME;
@@ -25,10 +25,7 @@ export default async function Home() {
           <h1 className="text-5xl font-bold text-gray-900 dark:text-white">
             {UI_TEXT.TITLE}
           </h1>
-          <ErrorMessage 
-            message={error || UI_TEXT.ERRORS.GENERIC} 
-            onRetry={() => window.location.reload()} 
-          />
+          <ErrorMessage message={error || UI_TEXT.ERRORS.GENERIC} />
         </div>
       </div>
     );
