@@ -9,15 +9,15 @@ interface AnimeImageProps {
 }
 
 export default function AnimeImage({ src, alt }: AnimeImageProps) {
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasError, setHasError] = useState(false);
+  const [loadedSrc, setLoadedSrc] = useState<string>('');
+  const [errorSrc, setErrorSrc] = useState<string>('');
+
+  const isLoaded = loadedSrc === src;
+  const hasError = errorSrc === src;
+  const isLoading = !isLoaded && !hasError;
 
   return (
-    <div className="relative w-full aspect-[16/9] mx-auto overflow-hidden rounded-lg shadow-2xl bg-black dark:bg-gray-950">
-      {isLoading && (
-        <div className="absolute inset-0 bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 animate-pulse" />
-      )}
-      
+    <div className="relative w-full aspect-video mx-auto overflow-hidden rounded-lg shadow-2xl bg-black dark:bg-gray-950">
       {hasError ? (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800">
           <div className="text-center p-4">
@@ -25,21 +25,22 @@ export default function AnimeImage({ src, alt }: AnimeImageProps) {
           </div>
         </div>
       ) : (
-        <Image
-          src={src}
-          alt={alt}
-          fill
-          className={`object-contain transition-opacity duration-300 ${
-            isLoading ? 'opacity-0' : 'opacity-100'
-          }`}
-          onLoad={() => setIsLoading(false)}
-          onError={() => {
-            setIsLoading(false);
-            setHasError(true);
-          }}
-          priority
-          unoptimized // Для внешних изображений
-        />
+        <>
+          {isLoading && (
+            <div className="absolute inset-0 animate-pulse bg-gray-800 dark:bg-gray-900" />
+          )}
+          <Image
+            src={src}
+            alt={alt}
+            fill
+            className={`object-contain transition-opacity duration-300 ${isLoaded ? 'opacity-100' : 'opacity-0'
+              }`}
+            onError={() => setErrorSrc(src)}
+            onLoad={() => setLoadedSrc(src)}
+            priority
+            unoptimized
+          />
+        </>
       )}
     </div>
   );

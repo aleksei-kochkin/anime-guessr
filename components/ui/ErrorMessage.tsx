@@ -1,3 +1,5 @@
+import Button from './Button';
+
 interface ErrorMessageProps {
   message: string;
   onRetry?: () => void;
@@ -9,12 +11,9 @@ export default function ErrorMessage({ message, onRetry }: ErrorMessageProps) {
       <div className="text-red-700 dark:text-red-400 mb-2 text-4xl">⚠️</div>
       <p className="text-red-700 dark:text-red-400 mb-4 font-medium">{message}</p>
       {onRetry && (
-        <button
-          onClick={onRetry}
-          className="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium"
-        >
+        <Button onClick={onRetry} variant="danger" size="lg">
           Try Again
-        </button>
+        </Button>
       )}
     </div>
   );

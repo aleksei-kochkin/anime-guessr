@@ -51,3 +51,13 @@ export interface GameState {
   attempts: number; // Количество использованных попыток (0-6)
   maxAttempts: number; // Максимальное количество попыток
 }
+
+export interface AnimeFilters {
+  kind?: string[]; // tv, movie, ova, ona, special, music
+  status?: string[]; // anons, ongoing, released
+  season?: string; // e.g., "2020_2024", "summer_2023"
+  score?: number; // минимальный рейтинг
+  duration?: string; // S (<10min), D (<30min), F (>30min)
+  rating?: string[]; // g, pg, pg_13, r, r_plus, rx
+  genre?: string[]; // список ID жанров
+}

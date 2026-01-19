@@ -1,3 +1,5 @@
+'use client';
+
 import { UI_TEXT } from '@/lib/constants/game';
 
 interface GameStatsProps {
@@ -12,7 +14,7 @@ export default function GameStats({ round, score, correctRounds, className = '' 
   const accuracy = round > 0 ? Math.round((correctRounds / round) * 100) : 0;
 
   return (
-    <div className={`flex justify-center gap-6 ${className}`}>
+    <div className={`flex justify-center items-center gap-6 ${className}`}>
       <div className="text-center">
         <div className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{UI_TEXT.STATS.ROUND}</div>
         <div className="text-xl font-bold text-gray-900 dark:text-white">{round}</div>

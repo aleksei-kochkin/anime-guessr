@@ -2,13 +2,14 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { fetchRandomAnime, verifyAnswer } from '@/lib/actions/anime';
-import { GameAnime } from '@/lib/types/anime';
+import { GameAnime, AnimeFilters } from '@/lib/types/anime';
 import { UI_TEXT } from '@/lib/constants/game';
 import { getErrorMessage } from '@/lib/utils/errors';
 import AnimeImage from './AnimeImage';
 import AnswerInput from './AnswerInput';
 import ResultDisplay from './ResultDisplay';
 import GameStats from './GameStats';
+import FilterPanel from './FilterPanel';
 import LoadingSpinner from '../ui/LoadingSpinner';
 import ErrorMessage from '../ui/ErrorMessage';
 
@@ -17,6 +18,7 @@ interface GameContainerProps {
 }
 
 export default function GameContainer({ initialAnime }: GameContainerProps) {
+  // Скриншоты уже перемешаны на сервере
   const [currentAnime, setCurrentAnime] = useState<GameAnime>(initialAnime);
   const [attempts, setAttempts] = useState(0); // Количество использованных попыток (0-5)
   const [isRoundComplete, setIsRoundComplete] = useState(false);
@@ -28,14 +30,50 @@ export default function GameContainer({ initialAnime }: GameContainerProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0); // Текущий просматриваемый скриншот
+  const [filters, setFilters] = useState<AnimeFilters>({});
 
   const MAX_ATTEMPTS = 6;
 
-  // Все доступные изображения (текущие раскрытые)
+  // Загружаем фильтры и статистику из localStorage при монтировании
+  useEffect(() => {
+    const savedFilters = localStorage.getItem('anime-filters');
+    if (savedFilters) {
+      try {
+        setFilters(JSON.parse(savedFilters));
+      } catch (e) {
+        console.error('Failed to parse saved filters:', e);
+      }
+    }
+
+    const savedStats = localStorage.getItem('anime-stats');
+    if (savedStats) {
+      try {
+        const stats = JSON.parse(savedStats);
+        setScore(stats.score || 0);
+        setRound(stats.round || 1);
+        setCorrectRounds(stats.correctRounds || 0);
+      } catch (e) {
+        console.error('Failed to parse saved stats:', e);
+      }
+    }
+  }, []);
+
+  // Сохраняем статистику при изменении
+  useEffect(() => {
+    const stats = {
+      score,
+      round,
+      correctRounds,
+    };
+    localStorage.setItem('anime-stats', JSON.stringify(stats));
+  }, [score, round, correctRounds]);
+
+  // Все доступные изображения (только первые 6 скриншотов)
   const availableImages = useMemo(() => {
-    return currentAnime.screenshots.length > 0
-      ? currentAnime.screenshots
-      : [currentAnime.image];
+    if (currentAnime.screenshots.length > 0) {
+      return currentAnime.screenshots.slice(0, MAX_ATTEMPTS);
+    }
+    return [currentAnime.image];
   }, [currentAnime]);
 
   // Количество раскрытых изображений
@@ -53,6 +91,15 @@ export default function GameContainer({ initialAnime }: GameContainerProps) {
       setSelectedImageIndex(attempts);
     }
   }, [attempts]);
+
+  // Предзагружаем следующий скриншот
+  useEffect(() => {
+    const nextIndex = unlockedImagesCount;
+    if (nextIndex < availableImages.length && nextIndex < MAX_ATTEMPTS) {
+      const img = new Image();
+      img.src = availableImages[nextIndex];
+    }
+  }, [availableImages, unlockedImagesCount, MAX_ATTEMPTS]);
 
   const handleSubmitAnswer = async (answer: string, animeId?: number) => {
     setIsLoading(true);
@@ -100,7 +147,8 @@ export default function GameContainer({ initialAnime }: GameContainerProps) {
     setError(null);
 
     try {
-      const newAnime = await fetchRandomAnime();
+      const newAnime = await fetchRandomAnime(filters);
+      // Скриншоты уже перемешаны на сервере
       setCurrentAnime(newAnime);
       setIsRoundComplete(false);
       setIsCorrect(null);
@@ -116,14 +164,52 @@ export default function GameContainer({ initialAnime }: GameContainerProps) {
     }
   };
 
+  const handleFiltersChange = async (newFilters: AnimeFilters) => {
+    setFilters(newFilters);
+    // Сохраняем в localStorage
+    localStorage.setItem('anime-filters', JSON.stringify(newFilters));
+
+    // Перезапрашиваем аниме с новыми фильтрами
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const newAnime = await fetchRandomAnime(newFilters);
+      // Скриншоты уже перемешаны на сервере
+      setCurrentAnime(newAnime);
+      setIsRoundComplete(false);
+      setIsCorrect(null);
+      setAttempts(0);
+      setWrongAnswers([]);
+      setSelectedImageIndex(0);
+    } catch (err) {
+      console.error('Error fetching anime with new filters:', err);
+      setError(getErrorMessage(err) || UI_TEXT.ERRORS.FETCH_ANIME);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResetStats = () => {
+    if (window.confirm('Are you sure you want to reset all statistics?')) {
+      setScore(0);
+      setRound(1);
+      setCorrectRounds(0);
+      localStorage.removeItem('anime-stats');
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-black py-4 px-4">
+    <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-black py-4 px-4">
       <div className="max-w-7xl mx-auto space-y-4">
         {/* Header */}
         <header className="text-center space-y-2 animate-fadeIn">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            {UI_TEXT.TITLE}
-          </h1>
+          <div className="flex items-center justify-center gap-4">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              {UI_TEXT.TITLE}
+            </h1>
+            <FilterPanel filters={filters} onFiltersChange={handleFiltersChange} />
+          </div>
           <GameStats round={round} score={score} correctRounds={correctRounds} />
         </header>
 
@@ -185,15 +271,16 @@ export default function GameContainer({ initialAnime }: GameContainerProps) {
                       key={index}
                       onClick={() => isUnlocked && setSelectedImageIndex(index)}
                       disabled={!isUnlocked}
-                      className={`w-3 h-3 rounded-full transition-all cursor-pointer ${isUsed
-                        ? isCurrent
-                          ? 'bg-red-500 ring-2 ring-red-400 dark:ring-red-600 scale-125'
-                          : 'bg-red-500 hover:scale-125 hover:ring-2 hover:ring-red-400 dark:hover:ring-red-600'
-                        : isActive
+                      className={`w-3 h-3 rounded-full transition-all ${isUnlocked ? 'cursor-pointer' : 'cursor-default'
+                        } ${isUsed
                           ? isCurrent
-                            ? 'bg-blue-500 ring-2 ring-blue-400 dark:ring-blue-600 scale-125'
-                            : 'bg-blue-500 scale-125 hover:ring-2 hover:ring-blue-400 dark:hover:ring-blue-600'
-                          : 'bg-gray-300 dark:bg-gray-600 opacity-50'
+                            ? 'bg-red-500 ring-2 ring-red-400 dark:ring-red-600 scale-125'
+                            : 'bg-red-500 hover:scale-125 hover:ring-2 hover:ring-red-400 dark:hover:ring-red-600'
+                          : isActive
+                            ? isCurrent
+                              ? 'bg-blue-500 ring-2 ring-blue-400 dark:ring-blue-600 scale-125'
+                              : 'bg-blue-500 scale-125 hover:ring-2 hover:ring-blue-400 dark:hover:ring-blue-600'
+                            : 'bg-gray-300 dark:bg-gray-600 opacity-50'
                         }`}
                       title={isUnlocked ? `Screenshot ${index + 1}${isCurrent ? ' (viewing)' : ''}` : 'Locked'}
                     />
@@ -242,6 +329,17 @@ export default function GameContainer({ initialAnime }: GameContainerProps) {
             <p>You have {MAX_ATTEMPTS} attempts • Each attempt unlocks a new screenshot • Click dots to switch • Points: {MAX_ATTEMPTS - attempts}</p>
           </div>
         )}
+
+        {/* Reset Stats Button - Bottom Right */}
+        <div className="fixed bottom-4 right-4">
+          <button
+            onClick={handleResetStats}
+            className="px-3 py-1.5 text-xs bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-500 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-400 transition-all duration-200 cursor-pointer opacity-50 hover:opacity-100 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md"
+            title="Reset statistics"
+          >
+            Reset Stats
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -2,11 +2,11 @@
 
 // Server Actions для игры
 import { getRandomAnime, searchAnime, checkAnswer } from '@/lib/api/shikimori';
-import { GameAnime, AnimeSearchResult } from '@/lib/types/anime';
+import { GameAnime, AnimeSearchResult, AnimeFilters } from '@/lib/types/anime';
 
-export async function fetchRandomAnime(): Promise<GameAnime> {
+export async function fetchRandomAnime(filters?: AnimeFilters): Promise<GameAnime> {
   try {
-    const anime = await getRandomAnime();
+    const anime = await getRandomAnime(filters);
     return anime;
   } catch (error) {
     console.error('Error fetching random anime:', error);

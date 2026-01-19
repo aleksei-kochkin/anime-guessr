@@ -1,6 +1,7 @@
 'use client';
 
 import { UI_TEXT } from '@/lib/constants/game';
+import Button from '@/components/ui/Button';
 
 interface ResultDisplayProps {
   isCorrect: boolean;
@@ -23,20 +24,18 @@ export default function ResultDisplay({
 }: ResultDisplayProps) {
   const pointsEarned = isCorrect ? maxAttempts - attempts : 0;
   return (
-    <div className={`w-full max-w-md mx-auto p-4 rounded-lg shadow-lg transition-all duration-300 animate-scaleIn ${
-      isCorrect 
-        ? 'bg-green-50 dark:bg-green-900/20 border-2 border-green-500' 
-        : 'bg-red-50 dark:bg-red-900/20 border-2 border-red-500'
-    }`}>
+    <div className={`w-full max-w-md mx-auto p-4 rounded-lg shadow-lg transition-all duration-300 animate-scaleIn ${isCorrect
+      ? 'bg-green-50 dark:bg-green-900/20 border-2 border-green-500'
+      : 'bg-red-50 dark:bg-red-900/20 border-2 border-red-500'
+      }`}>
       <div className="text-center space-y-3">
         <div className="text-3xl font-bold">
           {isCorrect ? '✓' : '✗'}
         </div>
-        
+
         <div>
-          <h3 className={`text-lg font-bold ${
-            isCorrect ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'
-          }`}>
+          <h3 className={`text-lg font-bold ${isCorrect ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'
+            }`}>
             {isCorrect ? UI_TEXT.CORRECT : UI_TEXT.WRONG}
           </h3>
           {isCorrect && (
@@ -63,22 +62,20 @@ export default function ResultDisplay({
           )}
         </div>
 
-        <div className="flex gap-3 pt-2">
+        <div className="grid grid-cols-2 gap-3 pt-2">
           <a
             href={animeUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
           >
-            {UI_TEXT.VIEW_DETAILS}
+            <Button variant="ghost" size="md" fullWidth className="border-2 border-gray-300 dark:border-gray-600 h-full">
+              {UI_TEXT.VIEW_DETAILS}
+            </Button>
           </a>
-          
-          <button
-            onClick={onNext}
-            className="flex-1 px-4 py-2 text-sm font-medium text-white bg-blue-500 rounded-lg hover:bg-blue-600 transition-colors cursor-pointer"
-          >
+
+          <Button onClick={onNext} variant="primary" size="md" fullWidth>
             {UI_TEXT.NEXT}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

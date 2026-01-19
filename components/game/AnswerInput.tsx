@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { fetchAnimeSuggestions } from '@/lib/actions/anime';
 import { AnimeSearchResult } from '@/lib/types/anime';
 import { GAME_CONFIG, UI_TEXT } from '@/lib/constants/game';
+import Button from '@/components/ui/Button';
 
 interface AnswerInputProps {
   onSubmit: (answer: string, animeId?: number) => void;
@@ -109,14 +110,16 @@ export default function AnswerInput({ onSubmit, disabled }: AnswerInputProps) {
           disabled={disabled}
           className="w-full px-3 py-2 text-base border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         />
-        
-        <button
+
+        <Button
           type="submit"
           disabled={disabled}
-          className="absolute right-1.5 top-1/2 -translate-y-1/2 px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors text-xs font-medium"
+          variant="primary"
+          size="sm"
+          className="absolute right-1.5 top-1/2 -translate-y-1/2"
         >
           {input.trim() ? UI_TEXT.SUBMIT : 'Skip'}
-        </button>
+        </Button>
       </form>
 
       {showSuggestions && suggestions.length > 0 && (
@@ -128,9 +131,8 @@ export default function AnswerInput({ onSubmit, disabled }: AnswerInputProps) {
             <button
               key={anime.id}
               onClick={() => handleSelectSuggestion(anime.id, anime.name, anime.russian)}
-              className={`w-full px-3 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-b-0 ${
-                index === selectedIndex ? 'bg-gray-100 dark:bg-gray-700' : ''
-              }`}
+              className={`w-full px-3 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-b-0 cursor-pointer ${index === selectedIndex ? 'bg-gray-100 dark:bg-gray-700' : ''
+                }`}
             >
               <div className="text-sm font-medium text-gray-900 dark:text-white">
                 {anime.russian || anime.name}
