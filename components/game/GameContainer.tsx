@@ -10,7 +10,6 @@ import AnswerInput from './AnswerInput';
 import ResultDisplay from './ResultDisplay';
 import GameStats from './GameStats';
 import FilterPanel from './FilterPanel';
-import LoadingSpinner from '../ui/LoadingSpinner';
 import ErrorMessage from '../ui/ErrorMessage';
 
 interface GameContainerProps {
@@ -28,6 +27,7 @@ export default function GameContainer({ initialAnime }: GameContainerProps) {
   const [correctRounds, setCorrectRounds] = useState(0); // Количество правильно угаданных раундов
   const [round, setRound] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingAnime, setIsLoadingAnime] = useState(false); // Загрузка нового аниме
   const [error, setError] = useState<string | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0); // Текущий просматриваемый скриншот
   const [filters, setFilters] = useState<AnimeFilters>({});
@@ -143,7 +143,7 @@ export default function GameContainer({ initialAnime }: GameContainerProps) {
   };
 
   const handleNextRound = async () => {
-    setIsLoading(true);
+    setIsLoadingAnime(true);
     setError(null);
 
     try {
@@ -160,7 +160,7 @@ export default function GameContainer({ initialAnime }: GameContainerProps) {
       console.error('Error fetching new anime:', err);
       setError(getErrorMessage(err) || UI_TEXT.ERRORS.FETCH_ANIME);
     } finally {
-      setIsLoading(false);
+      setIsLoadingAnime(false);
     }
   };
 
@@ -170,7 +170,7 @@ export default function GameContainer({ initialAnime }: GameContainerProps) {
     localStorage.setItem('anime-filters', JSON.stringify(newFilters));
 
     // Перезапрашиваем аниме с новыми фильтрами
-    setIsLoading(true);
+    setIsLoadingAnime(true);
     setError(null);
 
     try {
@@ -186,7 +186,7 @@ export default function GameContainer({ initialAnime }: GameContainerProps) {
       console.error('Error fetching anime with new filters:', err);
       setError(getErrorMessage(err) || UI_TEXT.ERRORS.FETCH_ANIME);
     } finally {
-      setIsLoading(false);
+      setIsLoadingAnime(false);
     }
   };
 
@@ -200,7 +200,7 @@ export default function GameContainer({ initialAnime }: GameContainerProps) {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-black py-4 px-4">
+    <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-black py-4 px-4 relative">
       <div className="max-w-7xl mx-auto space-y-4">
         {/* Header */}
         <header className="text-center space-y-2 animate-fadeIn">
@@ -216,14 +216,6 @@ export default function GameContainer({ initialAnime }: GameContainerProps) {
         {/* Error Display */}
         {error && (
           <ErrorMessage message={error} onRetry={handleNextRound} />
-        )}
-
-        {/* Loading State */}
-        {isLoading && !currentAnime && (
-          <div className="text-center py-6 animate-fadeIn">
-            <LoadingSpinner size="lg" className="mx-auto" />
-            <p className="mt-3 text-gray-600 dark:text-gray-400">{UI_TEXT.LOADING.ANIME}</p>
-          </div>
         )}
 
         {/* Game Content */}
@@ -341,6 +333,13 @@ export default function GameContainer({ initialAnime }: GameContainerProps) {
           </button>
         </div>
       </div>
+
+      {/* Loading Bar */}
+      {isLoadingAnime && (
+        <div className="fixed top-0 left-0 right-0 z-50 h-1.5 bg-gray-200 dark:bg-gray-800 overflow-hidden">
+          <div className="h-full shadow-lg shadow-blue-500/50 animate-loading-bar" />
+        </div>
+      )}
     </div>
   );
 }

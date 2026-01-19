@@ -31,6 +31,7 @@ body {
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -42,6 +43,7 @@ body {
     opacity: 0;
     transform: translateX(-20px);
   }
+
   to {
     opacity: 1;
     transform: translateX(0);
@@ -53,6 +55,7 @@ body {
     opacity: 0;
     transform: scale(0.9);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
@@ -101,8 +104,31 @@ a {
   ::-webkit-scrollbar-thumb {
     background: #475569;
   }
-  
+
   ::-webkit-scrollbar-thumb:hover {
     background: #64748b;
   }
+}
+
+/* Loading bar animation - shimmer effect only */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-loading-bar {
+  width: 100%;
+  background: linear-gradient(90deg,
+      rgba(37, 99, 235, 0.8) 0%,
+      rgba(59, 130, 246, 1) 25%,
+      rgba(96, 165, 250, 1) 50%,
+      rgba(59, 130, 246, 1) 75%,
+      rgba(37, 99, 235, 0.8) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 2.5s linear infinite;
 }
