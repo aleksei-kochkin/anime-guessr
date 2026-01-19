@@ -1,5 +1,5 @@
 // Factory for creating content strategies
-import { ContentType } from '@/lib/types/anime';
+import { ContentType } from '@/lib/types/game';
 import { ContentStrategy } from './ContentStrategy';
 import { AnimeStrategy } from './AnimeStrategy';
 import { MovieStrategy } from './MovieStrategy';
