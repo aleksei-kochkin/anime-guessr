@@ -2,16 +2,17 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { fetchAnimeSuggestions } from '@/lib/actions/anime';
-import { AnimeSearchResult } from '@/lib/types/anime';
+import { AnimeSearchResult, AnimeFilters } from '@/lib/types/anime';
 import { GAME_CONFIG, UI_TEXT } from '@/lib/constants/game';
 import Button from '@/components/ui/Button';
 
 interface AnswerInputProps {
   onSubmit: (answer: string, animeId?: number) => void;
   disabled: boolean;
+  filters?: AnimeFilters;
 }
 
-export default function AnswerInput({ onSubmit, disabled }: AnswerInputProps) {
+export default function AnswerInput({ onSubmit, disabled, filters }: AnswerInputProps) {
   const [input, setInput] = useState('');
   const [suggestions, setSuggestions] = useState<AnimeSearchResult[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -27,7 +28,7 @@ export default function AnswerInput({ onSubmit, disabled }: AnswerInputProps) {
       }
 
       try {
-        const results = await fetchAnimeSuggestions(input);
+        const results = await fetchAnimeSuggestions(input, filters);
         setSuggestions(results);
         setShowSuggestions(true);
       } catch (error) {
@@ -38,7 +39,7 @@ export default function AnswerInput({ onSubmit, disabled }: AnswerInputProps) {
 
     const debounceTimer = setTimeout(fetchSuggestions, GAME_CONFIG.SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(debounceTimer);
-  }, [input]);
+  }, [input, filters]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

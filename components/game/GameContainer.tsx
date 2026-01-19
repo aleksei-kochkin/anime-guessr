@@ -295,8 +295,9 @@ export default function GameContainer({ initialAnime }: GameContainerProps) {
                   <AnswerInput
                     onSubmit={handleSubmitAnswer}
                     disabled={isLoading}
+                    filters={filters}
                   />
-                  
+
                   {/* Mobile Previous Attempts */}
                   {wrongAnswers.length > 0 && (
                     <div className="lg:hidden space-y-1">

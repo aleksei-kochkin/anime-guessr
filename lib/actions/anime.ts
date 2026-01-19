@@ -14,9 +14,9 @@ export async function fetchRandomAnime(filters?: AnimeFilters): Promise<GameAnim
   }
 }
 
-export async function fetchAnimeSuggestions(query: string): Promise<AnimeSearchResult[]> {
+export async function fetchAnimeSuggestions(query: string, filters?: AnimeFilters): Promise<AnimeSearchResult[]> {
   try {
-    const results = await searchAnime(query);
+    const results = await searchAnime(query, filters);
     return results;
   } catch (error) {
     console.error('Error searching anime:', error);

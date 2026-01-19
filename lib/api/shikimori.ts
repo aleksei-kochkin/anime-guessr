@@ -179,16 +179,18 @@ export async function getRandomAnime(filters?: AnimeFilters): Promise<GameAnime>
   throw new APIError('Failed to find anime with enough screenshots', 404);
 }
 
-export async function searchAnime(query: string): Promise<AnimeSearchResult[]> {
+export async function searchAnime(query: string, filters?: AnimeFilters): Promise<AnimeSearchResult[]> {
   if (!query || query.trim().length < GAME_CONFIG.SEARCH_MIN_LENGTH) {
     return [];
   }
   
   try {
+    const filterParams = buildFilterParams(filters);
     const params = new URLSearchParams({
       search: query,
       limit: GAME_CONFIG.MAX_SUGGESTIONS.toString(),
       order: 'popularity',
+      ...filterParams,
     });
     
     const url = `${SHIKIMORI_CONFIG.BASE_URL}/animes?${params}`;
