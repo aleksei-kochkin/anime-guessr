@@ -100,8 +100,8 @@ export default function FilterPanel({ filters, onFiltersChange }: FilterPanelPro
             className="fixed inset-0 z-40"
             onClick={() => setIsOpen(false)}
           />
-          <div className="absolute right-0 mt-2 w-96 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50 max-h-[80vh] overflow-y-auto">
-            <div className="p-4 space-y-4">
+          <div className="absolute right-0 mt-2 w-[calc(100vw-1rem)] sm:w-96 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50 max-h-[80vh] overflow-y-auto">
+            <div className="p-3 sm:p-4 space-y-3 sm:space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                   Anime Filters

@@ -200,12 +200,12 @@ export default function GameContainer({ initialAnime }: GameContainerProps) {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-black py-4 px-4 relative">
-      <div className="max-w-7xl mx-auto space-y-4">
+    <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-black py-2 sm:py-4 px-2 sm:px-4 relative">
+      <div className="max-w-7xl mx-auto space-y-2 sm:space-y-4">
         {/* Header */}
         <header className="text-center space-y-2 animate-fadeIn">
-          <div className="flex items-center justify-center gap-4">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
               {UI_TEXT.TITLE}
             </h1>
             <FilterPanel filters={filters} onFiltersChange={handleFiltersChange} />
@@ -220,9 +220,9 @@ export default function GameContainer({ initialAnime }: GameContainerProps) {
 
         {/* Game Content */}
         {currentAnime && !error && (
-          <div className="grid grid-cols-[minmax(150px,250px)_1fr_minmax(150px,250px)] gap-8 animate-fadeIn items-start w-full px-4">
+          <div className="flex flex-col lg:grid lg:grid-cols-[minmax(150px,250px)_1fr_minmax(150px,250px)] gap-4 lg:gap-8 animate-fadeIn items-start w-full px-2 sm:px-4">
             {/* Left Column - Previous Attempts */}
-            <div className="space-y-2">
+            <div className="hidden lg:block space-y-2">
               {wrongAnswers.length > 0 && (
                 <>
                   <h3 className="text-xs font-medium text-gray-600 dark:text-gray-400 text-center">
@@ -243,7 +243,7 @@ export default function GameContainer({ initialAnime }: GameContainerProps) {
             </div>
 
             {/* Center Column - Main Game */}
-            <div className="space-y-3 w-full">
+            <div className="space-y-2 sm:space-y-3 w-full">
               {/* Anime Image */}
               <AnimeImage
                 src={displayImage}
@@ -263,7 +263,7 @@ export default function GameContainer({ initialAnime }: GameContainerProps) {
                       key={index}
                       onClick={() => isUnlocked && setSelectedImageIndex(index)}
                       disabled={!isUnlocked}
-                      className={`w-3 h-3 rounded-full transition-all ${isUnlocked ? 'cursor-pointer' : 'cursor-default'
+                      className={`w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full transition-all ${isUnlocked ? 'cursor-pointer' : 'cursor-default'
                         } ${isUsed
                           ? isCurrent
                             ? 'bg-red-500 ring-2 ring-red-400 dark:ring-red-600 scale-125'
@@ -282,9 +282,9 @@ export default function GameContainer({ initialAnime }: GameContainerProps) {
 
               {/* Answer Input or Result */}
               {!isRoundComplete ? (
-                <div className="space-y-3">
+                <div className="space-y-2 sm:space-y-3">
                   <div className="text-center">
-                    <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
+                    <h2 className="text-lg sm:text-xl font-semibold text-gray-800 dark:text-gray-200">
                       {UI_TEXT.QUESTION}
                     </h2>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
@@ -296,6 +296,25 @@ export default function GameContainer({ initialAnime }: GameContainerProps) {
                     onSubmit={handleSubmitAnswer}
                     disabled={isLoading}
                   />
+                  
+                  {/* Mobile Previous Attempts */}
+                  {wrongAnswers.length > 0 && (
+                    <div className="lg:hidden space-y-1">
+                      <h3 className="text-xs font-medium text-gray-600 dark:text-gray-400 text-center">
+                        Previous Attempts
+                      </h3>
+                      <div className="flex flex-wrap gap-1 justify-center">
+                        {wrongAnswers.map((answer, index) => (
+                          <div
+                            key={index}
+                            className="px-2 py-1 bg-red-50 dark:bg-red-900/10 text-red-700 dark:text-red-400 rounded text-xs border border-red-200 dark:border-red-900/30"
+                          >
+                            {answer || '(skipped)'}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <ResultDisplay
@@ -311,22 +330,23 @@ export default function GameContainer({ initialAnime }: GameContainerProps) {
             </div>
 
             {/* Right Column - Empty for symmetry */}
-            <div></div>
+            <div className="hidden lg:block"></div>
           </div>
         )}
 
         {/* Instructions */}
         {!isRoundComplete && !error && (
-          <div className="text-center text-xs text-gray-500 dark:text-gray-400 max-w-2xl mx-auto animate-fadeIn">
-            <p>You have {MAX_ATTEMPTS} attempts • Each attempt unlocks a new screenshot • Click dots to switch • Points: {MAX_ATTEMPTS - attempts}</p>
+          <div className="text-center text-xs text-gray-500 dark:text-gray-400 max-w-2xl mx-auto animate-fadeIn px-2">
+            <p className="hidden sm:block">You have {MAX_ATTEMPTS} attempts • Each attempt unlocks a new screenshot • Click dots to switch • Points: {MAX_ATTEMPTS - attempts}</p>
+            <p className="sm:hidden">Attempt {attempts + 1}/{MAX_ATTEMPTS} • Points: {MAX_ATTEMPTS - attempts}</p>
           </div>
         )}
 
         {/* Reset Stats Button - Bottom Right */}
-        <div className="fixed bottom-4 right-4">
+        <div className="fixed bottom-2 right-2 sm:bottom-4 sm:right-4 z-40">
           <button
             onClick={handleResetStats}
-            className="px-3 py-1.5 text-xs bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-500 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-400 transition-all duration-200 cursor-pointer opacity-50 hover:opacity-100 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md"
+            className="px-2 sm:px-3 py-1 sm:py-1.5 text-xs bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-500 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-400 transition-all duration-200 cursor-pointer opacity-50 hover:opacity-100 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md"
             title="Reset statistics"
           >
             Reset Stats
@@ -336,7 +356,7 @@ export default function GameContainer({ initialAnime }: GameContainerProps) {
 
       {/* Loading Bar */}
       {isLoadingAnime && (
-        <div className="fixed top-0 left-0 right-0 z-50 h-1.5 bg-gray-200 dark:bg-gray-800 overflow-hidden">
+        <div className="fixed top-0 left-0 right-0 z-50 h-1 sm:h-1.5 bg-gray-200 dark:bg-gray-800 overflow-hidden">
           <div className="h-full shadow-lg shadow-blue-500/50 animate-loading-bar" />
         </div>
       )}
