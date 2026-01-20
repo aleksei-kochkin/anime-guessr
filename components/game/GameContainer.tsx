@@ -192,6 +192,7 @@ export default function GameContainer({ initialAnime }: GameContainerProps) {
                   onNext={gameLogic.handleNextRound}
                   attempts={gameLogic.attempts}
                   maxAttempts={gameLogic.MAX_ATTEMPTS}
+                  viewDetailsButtonText={strategy.viewDetailsButtonText}
                 />
               )}
             </div>

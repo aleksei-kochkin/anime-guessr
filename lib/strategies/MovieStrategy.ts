@@ -1,15 +1,24 @@
 // Strategy for movies
 import { BaseContentStrategy, FilterConfig } from './ContentStrategy';
-import { getAvailableGenres, POPULAR_COUNTRIES } from '@/lib/api/tmdb';
+import { 
+  getAvailableGenres, 
+  getAvailableCountries, 
+  getRandomContent, 
+  searchContent as searchKinopoisk,
+  checkAnswer as checkKinopoiskAnswer,
+  normalizeFilters 
+} from '@/lib/api/kinopoisk';
+import { GameContent, SearchResult } from '@/lib/types/game';
 
 export class MovieStrategy extends BaseContentStrategy {
   readonly type = 'movie' as const;
   readonly displayName = 'Movies';
   readonly questionText = 'What movie is this?';
   readonly placeholder = 'Enter movie name...';
+  readonly viewDetailsButtonText = 'View on Kinopoisk';
   readonly filterConfig: FilterConfig[] = [
     {
-      id: 'vote_average.gte',
+      id: 'ratingFrom',
       label: 'Minimum Rating',
       type: 'slider',
       min: 0,
@@ -17,24 +26,28 @@ export class MovieStrategy extends BaseContentStrategy {
       step: 0.5,
     },
     {
-      id: 'primary_release_date.gte',
-      label: 'Release Date From (YYYY-MM-DD)',
-      type: 'text',
-      placeholder: 'e.g., 2020-01-01',
+      id: 'yearFrom',
+      label: 'Year From',
+      type: 'number-range',
+      min: 1900,
+      max: new Date().getFullYear(),
+      placeholder: 'e.g., 2020',
     },
     {
-      id: 'primary_release_date.lte',
-      label: 'Release Date To (YYYY-MM-DD)',
-      type: 'text',
-      placeholder: 'e.g., 2024-12-31',
+      id: 'yearTo',
+      label: 'Year To',
+      type: 'number-range',
+      min: 1900,
+      max: new Date().getFullYear(),
+      placeholder: 'e.g., 2024',
     },
     {
-      id: 'with_origin_country',
+      id: 'countries',
       label: 'Country',
       type: 'dynamic-buttons',
     },
     {
-      id: 'with_genres',
+      id: 'genres',
       label: 'Genre',
       type: 'dynamic-buttons',
     },
@@ -42,26 +55,37 @@ export class MovieStrategy extends BaseContentStrategy {
   
   getDynamicOptionsLoader = () => {
     return async (filterId: string) => {
-      if (filterId === 'with_origin_country') {
-        return POPULAR_COUNTRIES.map(c => ({
+      if (filterId === 'countries') {
+        const countries = await getAvailableCountries();
+        return countries.map(c => ({
           id: c.id,
-          value: c.id,
-          label: c.name,
-          country: c.name,
+          label: c.country,
         }));
       }
       
-      if (filterId === 'with_genres') {
-        const genres = await getAvailableGenres('movie');
+      if (filterId === 'genres') {
+        const genres = await getAvailableGenres();
         return genres.map(g => ({
           id: g.id,
-          value: g.id,
-          label: g.name,
-          genre: g.name,
+          label: g.genre,
         }));
       }
       
       return [];
     };
   };
+  
+  async getRandomContent(filters: Record<string, unknown>): Promise<Omit<GameContent, 'contentType'>> {
+    const normalizedFilters = normalizeFilters(filters, 'movie');
+    return await getRandomContent('movie', normalizedFilters);
+  }
+  
+  async searchContent(query: string, filters: Record<string, unknown>): Promise<Array<Omit<SearchResult, 'contentType'>>> {
+    const normalizedFilters = normalizeFilters(filters, 'movie');
+    return await searchKinopoisk(query, 'movie', normalizedFilters);
+  }
+  
+  checkAnswer(userAnswer: string, correctName: string, correctSecondaryName: string): boolean {
+    return checkKinopoiskAnswer(userAnswer, correctName, correctSecondaryName);
+  }
 }

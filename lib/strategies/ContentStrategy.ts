@@ -1,11 +1,17 @@
 // Strategies for different content types
-import { ContentType } from '@/lib/types/game';
+import { ContentType, GameContent, SearchResult } from '@/lib/types/game';
 
 // Filter configuration types
 export type FilterType = 'button-multi' | 'button-single' | 'slider' | 'text' | 'number-range' | 'select' | 'dynamic-buttons';
 
 export interface FilterOption {
   value: string | number;
+  label: string;
+}
+
+// Dynamic filter option with strict typing
+export interface DynamicFilterOption {
+  id: number | string;
   label: string;
 }
 
@@ -30,18 +36,33 @@ export interface ContentStrategy {
   readonly displayName: string;
   readonly questionText: string;
   readonly placeholder: string;
+  readonly viewDetailsButtonText: string;
   readonly filterConfig: FilterConfig[];
   
   /**
    * Dynamic options loader for filters (if needed)
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  getDynamicOptionsLoader?: () => (filterId: string) => Promise<Array<{ id: number | string; [key: string]: any }>>;
+  getDynamicOptionsLoader?: () => (filterId: string) => Promise<DynamicFilterOption[]>;
   
   /**
    * Get filter panel title
    */
   getFilterPanelTitle(): string;
+  
+  /**
+   * Get random content with filters
+   */
+  getRandomContent(filters: Record<string, unknown>): Promise<Omit<GameContent, 'contentType'>>;
+  
+  /**
+   * Search content by query with filters
+   */
+  searchContent(query: string, filters: Record<string, unknown>): Promise<Array<Omit<SearchResult, 'contentType'>>>;
+  
+  /**
+   * Check if user answer is correct
+   */
+  checkAnswer(userAnswer: string, correctName: string, correctSecondaryName: string): boolean;
 }
 
 /**
@@ -52,12 +73,16 @@ export abstract class BaseContentStrategy implements ContentStrategy {
   abstract readonly displayName: string;
   abstract readonly questionText: string;
   abstract readonly placeholder: string;
+  abstract readonly viewDetailsButtonText: string;
   abstract readonly filterConfig: FilterConfig[];
   
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  getDynamicOptionsLoader?: () => (filterId: string) => Promise<Array<{ id: number | string; [key: string]: any }>>;
+  getDynamicOptionsLoader?: () => (filterId: string) => Promise<DynamicFilterOption[]>;
   
   getFilterPanelTitle(): string {
     return `${this.displayName} Filters`;
   }
+  
+  abstract getRandomContent(filters: Record<string, unknown>): Promise<Omit<GameContent, 'contentType'>>;
+  abstract searchContent(query: string, filters: Record<string, unknown>): Promise<Array<Omit<SearchResult, 'contentType'>>>;
+  abstract checkAnswer(userAnswer: string, correctName: string, correctSecondaryName: string): boolean;
 }

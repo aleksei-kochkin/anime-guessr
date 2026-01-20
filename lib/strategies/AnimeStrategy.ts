@@ -1,5 +1,7 @@
 // Strategy for anime
 import { BaseContentStrategy, FilterConfig } from './ContentStrategy';
+import { getRandomAnime, searchAnime, checkAnswer as checkAnimeAnswer } from '@/lib/api/shikimori';
+import { GameContent, SearchResult } from '@/lib/types/game';
 
 // Anime-specific filter options
 const ANIME_FILTER_OPTIONS = {
@@ -35,6 +37,7 @@ export class AnimeStrategy extends BaseContentStrategy {
   readonly displayName = 'Anime';
   readonly questionText = 'What anime is this?';
   readonly placeholder = 'Enter anime name...';
+  readonly viewDetailsButtonText = 'View on Shikimori';
   readonly filterConfig: FilterConfig[] = [
     {
       id: 'kind',
@@ -78,4 +81,18 @@ export class AnimeStrategy extends BaseContentStrategy {
       ],
     },
   ];
+  
+  async getRandomContent(filters: Record<string, unknown>): Promise<Omit<GameContent, 'contentType'>> {
+    return await getRandomAnime(filters);
+  }
+  
+  async searchContent(query: string, filters: Record<string, unknown>): Promise<Array<Omit<SearchResult, 'contentType'>>> {
+    const results = await searchAnime(query, filters);
+    // searchAnime returns SearchResult[] with contentType, we need to strip it
+    return results.map(({ contentType, ...rest }) => rest);
+  }
+  
+  checkAnswer(userAnswer: string, correctName: string, correctSecondaryName: string): boolean {
+    return checkAnimeAnswer(userAnswer, correctName, correctSecondaryName);
+  }
 }

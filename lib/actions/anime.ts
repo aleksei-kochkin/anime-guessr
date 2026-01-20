@@ -1,9 +1,23 @@
 'use server';
 
-import { getRandomAnime, searchAnime, checkAnswer } from '@/lib/api/shikimori';
-import { getRandomContent, searchContent, checkAnswer as checkTMDBAnswer, normalizeFilters } from '@/lib/api/tmdb';
 import { GameContent, ContentType, SearchResult } from '@/lib/types/game';
+import { ContentStrategyFactory } from '@/lib/strategies';
 import { getContentTypeCookie, getAnimeFiltersCookie, getMovieFiltersCookie, getTVSeriesFiltersCookie } from '@/lib/utils/cookies-server';
+
+/**
+ * Get filters for the specified content type from cookies
+ */
+async function getFiltersForContentType(type: ContentType): Promise<Record<string, unknown>> {
+  switch (type) {
+    case 'movie':
+      return await getMovieFiltersCookie();
+    case 'tv':
+      return await getTVSeriesFiltersCookie();
+    case 'anime':
+    default:
+      return await getAnimeFiltersCookie();
+  }
+}
 
 /**
  * Get random content (anime, movie or TV series)
@@ -16,39 +30,22 @@ export async function fetchRandomContent(
   const type = contentType || await getContentTypeCookie();
   
   try {
-    if (type === 'movie') {
-      // Read movie filters from cookies and normalize them
-      const rawFilters = await getMovieFiltersCookie();
-      const movieFilters = normalizeFilters(rawFilters, 'movie');
-      const film = await getRandomContent('movie', movieFilters);
-      return {
-        ...film,
-        contentType: type,
-      };
-    }
+    // Get strategy for content type
+    const strategy = ContentStrategyFactory.getStrategy(type);
     
-    if (type === 'tv') {
-      // Read TV series filters from cookies and normalize them
-      const rawFilters = await getTVSeriesFiltersCookie();
-      const tvSeriesFilters = normalizeFilters(rawFilters, 'tv');
-      const film = await getRandomContent('tv', tvSeriesFilters);
-      return {
-        ...film,
-        contentType: type,
-      };
-    }
+    // Read filters from cookies
+    const filters = await getFiltersForContentType(type);
     
-    // Read anime filters from cookies
-    const animeFilters = await getAnimeFiltersCookie();
-    const anime = await getRandomAnime(animeFilters);
+    // Get random content using strategy
+    const content = await strategy.getRandomContent(filters);
+    
     return {
-      ...anime,
-      contentType: 'anime',
+      ...content,
+      contentType: type,
     };
   } catch (error) {
     console.error(`Error fetching random ${type}:`, error);
-    const contentLabel = type === 'movie' ? 'movie' : type === 'tv' ? 'TV series' : 'anime';
-    throw new Error(`Failed to fetch ${contentLabel}. Please try again.`);
+    throw new Error(`Failed to fetch content. Please try again.`);
   }
 }
 
@@ -68,32 +65,19 @@ export async function fetchContentSuggestions(
   const type = contentType || await getContentTypeCookie();
 
   try {
-    if (type === 'movie') {
-      // Read movie filters from cookies and normalize them
-      const rawFilters = await getMovieFiltersCookie();
-      const movieFilters = normalizeFilters(rawFilters, 'movie');
-      const results = await searchContent(query, 'movie', movieFilters);
-      return results.map(film => ({
-        ...film,
-        contentType: type,
-      }));
-    }
+    // Get strategy for content type
+    const strategy = ContentStrategyFactory.getStrategy(type);
     
-    if (type === 'tv') {
-      // Read TV series filters from cookies and normalize them
-      const rawFilters = await getTVSeriesFiltersCookie();
-      const tvSeriesFilters = normalizeFilters(rawFilters, 'tv');
-      const results = await searchContent(query, 'tv', tvSeriesFilters);
-      return results.map(film => ({
-        ...film,
-        contentType: type,
-      }));
-    }
-
-    // Read anime filters from cookies
-    const animeFilters = await getAnimeFiltersCookie();
-    const results = await searchAnime(query, animeFilters);
-    return results; // searchAnime now returns SearchResult[] with contentType
+    // Read filters from cookies
+    const filters = await getFiltersForContentType(type);
+    
+    // Search content using strategy
+    const results = await strategy.searchContent(query, filters);
+    
+    return results.map(result => ({
+      ...result,
+      contentType: type,
+    }));
   } catch (error) {
     console.error(`Error searching ${type}:`, error);
     return [];
@@ -116,10 +100,7 @@ export async function verifyAnswer(
     return userAnswerId === correctId;
   }
   
-  // Otherwise check by name (for manual input)
-  if (contentType !== 'anime') {
-    return checkTMDBAnswer(userAnswer, correctName, correctSecondaryName);
-  }
-  
-  return checkAnswer(userAnswer, correctName, correctSecondaryName);
+  // Otherwise check by name using strategy (for manual input)
+  const strategy = ContentStrategyFactory.getStrategy(contentType);
+  return strategy.checkAnswer(userAnswer, correctName, correctSecondaryName);
 }

@@ -11,6 +11,7 @@ interface ResultDisplayProps {
   onNext: () => void;
   attempts: number;
   maxAttempts: number;
+  viewDetailsButtonText: string;
 }
 
 export default function ResultDisplay({
@@ -21,6 +22,7 @@ export default function ResultDisplay({
   onNext,
   attempts,
   maxAttempts,
+  viewDetailsButtonText,
 }: ResultDisplayProps) {
   const pointsEarned = isCorrect ? maxAttempts - attempts : 0;
   return (
@@ -69,7 +71,7 @@ export default function ResultDisplay({
             rel="noopener noreferrer"
           >
             <Button variant="ghost" size="md" fullWidth className="border-2 border-gray-300 dark:border-gray-600 h-full">
-              {UI_TEXT.VIEW_DETAILS}
+              {viewDetailsButtonText}
             </Button>
           </a>
 
