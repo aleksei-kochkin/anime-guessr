@@ -1,7 +1,6 @@
 // Hook for managing filters
 import { useState } from 'react';
 import { ContentType } from '@/lib/types/game';
-import { AnimeFilters } from '@/lib/api/shikimori';
 import { setClientCookie, COOKIE_NAMES } from '@/lib/utils/cookies-client';
 
 interface UseFiltersProps {
@@ -10,11 +9,11 @@ interface UseFiltersProps {
 }
 
 export function useFilters({ contentType, onFiltersChanged }: UseFiltersProps) {
-  const [animeFilters, setAnimeFilters] = useState<AnimeFilters>({});
+  const [animeFilters, setAnimeFilters] = useState<Record<string, unknown>>({});
   const [movieFilters, setMovieFilters] = useState<Record<string, unknown>>({});
   const [tvSeriesFilters, setTVSeriesFilters] = useState<Record<string, unknown>>({});
 
-  const handleAnimeFiltersChange = async (newFilters: AnimeFilters) => {
+  const handleAnimeFiltersChange = async (newFilters: Record<string, unknown>) => {
     setAnimeFilters(newFilters);
     setClientCookie(COOKIE_NAMES.ANIME_FILTERS, JSON.stringify(newFilters));
 

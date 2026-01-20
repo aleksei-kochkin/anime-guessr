@@ -19,7 +19,7 @@ export async function getContentTypeCookie() {
   return 'anime'; // default
 }
 
-export async function getAnimeFiltersCookie() {
+export async function getAnimeFiltersCookie(): Promise<Record<string, unknown>> {
   const cookieStore = await cookies();
   const animeFilters = cookieStore.get(COOKIE_NAMES.ANIME_FILTERS)?.value;
   
@@ -30,7 +30,7 @@ export async function getAnimeFiltersCookie() {
   }
 }
 
-export async function getMovieFiltersCookie() {
+export async function getMovieFiltersCookie(): Promise<Record<string, unknown>> {
   const cookieStore = await cookies();
   const movieFilters = cookieStore.get(COOKIE_NAMES.MOVIE_FILTERS)?.value;
   
@@ -41,7 +41,7 @@ export async function getMovieFiltersCookie() {
   }
 }
 
-export async function getTVSeriesFiltersCookie() {
+export async function getTVSeriesFiltersCookie(): Promise<Record<string, unknown>> {
   const cookieStore = await cookies();
   const tvSeriesFilters = cookieStore.get(COOKIE_NAMES.TV_SERIES_FILTERS)?.value;
   
