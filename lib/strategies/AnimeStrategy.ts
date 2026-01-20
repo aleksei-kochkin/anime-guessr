@@ -86,10 +86,8 @@ export class AnimeStrategy extends BaseContentStrategy {
     return await getRandomAnime(filters);
   }
   
-  async searchContent(query: string, filters: Record<string, unknown>): Promise<Array<Omit<SearchResult, 'contentType'>>> {
-    const results = await searchAnime(query, filters);
-    // searchAnime returns SearchResult[] with contentType, we need to strip it
-    return results.map(({ contentType, ...rest }) => rest);
+  async searchContent(query: string, filters: Record<string, unknown>): Promise<SearchResult[]> {
+    return await searchAnime(query, filters);
   }
   
   checkAnswer(userAnswer: string, correctName: string, correctSecondaryName: string): boolean {

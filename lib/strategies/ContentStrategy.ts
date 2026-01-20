@@ -57,7 +57,7 @@ export interface ContentStrategy {
   /**
    * Search content by query with filters
    */
-  searchContent(query: string, filters: Record<string, unknown>): Promise<Array<Omit<SearchResult, 'contentType'>>>;
+  searchContent(query: string, filters: Record<string, unknown>): Promise<SearchResult[]>;
   
   /**
    * Check if user answer is correct
@@ -83,6 +83,6 @@ export abstract class BaseContentStrategy implements ContentStrategy {
   }
   
   abstract getRandomContent(filters: Record<string, unknown>): Promise<Omit<GameContent, 'contentType'>>;
-  abstract searchContent(query: string, filters: Record<string, unknown>): Promise<Array<Omit<SearchResult, 'contentType'>>>;
+  abstract searchContent(query: string, filters: Record<string, unknown>): Promise<SearchResult[]>;
   abstract checkAnswer(userAnswer: string, correctName: string, correctSecondaryName: string): boolean;
 }

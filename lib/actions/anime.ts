@@ -71,13 +71,8 @@ export async function fetchContentSuggestions(
     // Read filters from cookies
     const filters = await getFiltersForContentType(type);
     
-    // Search content using strategy
-    const results = await strategy.searchContent(query, filters);
-    
-    return results.map(result => ({
-      ...result,
-      contentType: type,
-    }));
+    // Search content using strategy (already includes contentType)
+    return await strategy.searchContent(query, filters);
   } catch (error) {
     console.error(`Error searching ${type}:`, error);
     return [];

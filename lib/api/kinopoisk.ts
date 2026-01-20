@@ -1,5 +1,6 @@
 // API layer for working with Kinopoisk Unofficial API
 import { APIError, RateLimitError, handleAPIError } from '@/lib/utils/errors';
+import { SearchResult } from '@/lib/types/game';
 
 // Kinopoisk types
 export interface KinopoiskFilm {
@@ -431,12 +432,7 @@ export async function searchContent(
   query: string,
   contentType: 'movie' | 'tv' = 'movie',
   filters?: KinopoiskFilters
-): Promise<Array<{
-  id: number;
-  name: string;
-  secondaryName: string;
-  image: string;
-}>> {
+): Promise<SearchResult[]> {
   if (!query || query.trim().length < 2) {
     return [];
   }
@@ -472,6 +468,7 @@ export async function searchContent(
         name: name,
         secondaryName: originalName,
         image: item.posterUrlPreview || item.posterUrl || '',
+        contentType: contentType,
       };
     });
   } catch (error) {

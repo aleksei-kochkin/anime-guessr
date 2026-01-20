@@ -79,20 +79,8 @@ export default function GameContainer({ initialAnime }: GameContainerProps) {
             <UniversalFilterPanel
               title={strategy.getFilterPanelTitle()}
               filterConfig={strategy.filterConfig}
-              filters={
-                gameLogic.contentType === 'anime'
-                  ? filtersLogic.animeFilters
-                  : gameLogic.contentType === 'movie'
-                    ? filtersLogic.movieFilters
-                    : filtersLogic.tvSeriesFilters
-              }
-              onFiltersChange={
-                gameLogic.contentType === 'anime'
-                  ? filtersLogic.handleAnimeFiltersChange
-                  : gameLogic.contentType === 'movie'
-                    ? filtersLogic.handleMovieFiltersChange
-                    : filtersLogic.handleTVSeriesFiltersChange
-              }
+              filters={filtersLogic.filters}
+              onFiltersChange={filtersLogic.handleFiltersChange}
               dynamicOptionsLoader={strategy.getDynamicOptionsLoader?.()}
             />
           </div>

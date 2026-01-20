@@ -80,7 +80,7 @@ export class TVSeriesStrategy extends BaseContentStrategy {
     return await getRandomContent('tv', normalizedFilters);
   }
   
-  async searchContent(query: string, filters: Record<string, unknown>): Promise<Array<Omit<SearchResult, 'contentType'>>> {
+  async searchContent(query: string, filters: Record<string, unknown>): Promise<SearchResult[]> {
     const normalizedFilters = normalizeFilters(filters, 'tv');
     return await searchKinopoisk(query, 'tv', normalizedFilters);
   }
